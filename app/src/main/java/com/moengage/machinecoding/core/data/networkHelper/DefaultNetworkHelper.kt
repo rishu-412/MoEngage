@@ -4,10 +4,8 @@ import android.content.Context
 import android.util.Log
 import com.moengage.machinecoding.core.model.QuestionModel
 import com.moengage.machinecoding.core.network.OnBoardingNetworkManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.ByteArrayInputStream
-import java.io.ObjectInputStream
+import org.json.JSONObject
+
 
 class DefaultNetworkHelper constructor(
     private val applicationContext : Context) : OnBoardingNetworkHelper {
@@ -20,15 +18,19 @@ class DefaultNetworkHelper constructor(
             Log.i("DefaultNetworkHelper", "getOnBoardingQuestions: input stream is null")
             return emptyList()
         }
-
-        val byteArrayInputStream = ByteArrayInputStream(inputStream)
-        val objectInputStream = withContext(Dispatchers.IO) {
-            ObjectInputStream(byteArrayInputStream)
+        val list = mutableListOf<QuestionModel>()
+        val json = String(inputStream)
+        val jsonObject = JSONObject(json)
+        val jsonArray = jsonObject.getJSONArray("questions")
+        for(i in 0 until jsonArray.length()){
+            val itemObject = jsonArray.getJSONObject(i)
+            val questionModel = QuestionModel(
+                itemObject.getString("text"),
+                itemObject.getString("type")
+            )
+            Log.i("TAG", "getOnBoardingQuestions: $questionModel")
+            list.add(questionModel)
         }
-        withContext(Dispatchers.IO) {
-            Log.i("TAG", "getOnBoardingQuestions: ${objectInputStream.readObject()}")
-        }
-        return listOf()
-
+        return list
     }
 }
